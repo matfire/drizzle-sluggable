@@ -1,0 +1,51 @@
+{
+	"name": "@matfire/drizzle-sluggable",
+	"version": "0.0.1",
+	"description": "",
+	"license": "MIT",
+	"author": "Matteo Gassend",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"lint": "biome check",
+		"lint:fix": "npm run lint -- --write",
+		"lint-staged": "lint-staged",
+		"build": "tsdown",
+		"prepare": "husky"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./pg": {
+			"types": "./dist/pg/index.d.ts",
+			"import": "./dist/pg/index.js"
+		},
+		"./mysql": {
+			"types": "./dist/mysql/index.d.ts",
+			"import": "./dist/mysql/index.js"
+		},
+		"./sqlite": {
+			"types": "./dist/sqlite/index.d.ts",
+			"import": "./dist/sqlite/index.js"
+		},
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"import": "./dist/core/index.js"
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.4",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.6",
+		"tsdown": "^0.15.1",
+		"typescript": "^5.9.2"
+	},
+	"peerDependencies": {
+		"drizzle-orm": "^0.44.5"
+	},
+	"lint-staged": {
+		"*.ts": "biome check --write"
+	}
+}
