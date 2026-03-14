@@ -9,7 +9,7 @@ Generate unique slugs for inserts and updates with a table-bound API, sensible d
 ## Install
 
 ```sh
-npm install @matfire/drizzle-sluggable
+bun add @matfire/drizzle-sluggable
 ```
 
 ## Quick start
@@ -320,12 +320,12 @@ Available builder methods:
 This repo uses `vitest` for integration tests:
 
 ```sh
-npm test
+bun run test
 ```
 
 - PostgreSQL and MySQL tests run with `testcontainers`, so Docker must be running locally.
 - SQLite tests use `@libsql/client` with an in-memory database and do not require Docker.
-- Run the full local verification suite with `npm run check`.
+- Run the full local verification suite with `bun run check`.
 
 ## Notes
 
