@@ -117,8 +117,8 @@ type UpdateFromMethod<
 	: never;
 
 export type SluggableBuilderApi<
-	InsertModel extends Record<string, any>,
-	SelectModel extends Record<string, any>,
+	InsertModel extends Record<string, unknown>,
+	SelectModel extends Record<string, unknown>,
 	Table,
 	HasFrom extends boolean,
 	HasTo extends boolean,
@@ -242,8 +242,8 @@ type ResolvedBuilderConfig<InsertModel, SelectModel> = {
 };
 
 class SluggableBuilder<
-	InsertModel extends Record<string, any>,
-	SelectModel extends Record<string, any>,
+	InsertModel extends Record<string, unknown>,
+	SelectModel extends Record<string, unknown>,
 	Table extends object,
 	HasFrom extends boolean = false,
 	HasTo extends boolean = false,
@@ -469,10 +469,12 @@ class SluggableBuilder<
 }
 
 export function createSluggableCore<
-	InsertModel extends Record<string, any>,
-	SelectModel extends Record<string, any>,
+	InsertModel extends Record<string, unknown>,
+	SelectModel extends Record<string, unknown>,
 	Table extends object,
-	Config extends CreateSluggableConfig<InsertModel, SelectModel> | undefined,
+	Config extends
+		| CreateSluggableConfig<InsertModel, SelectModel>
+		| undefined = undefined,
 >(table: Table, config?: Config) {
 	return new SluggableBuilder<
 		InsertModel,
@@ -705,8 +707,8 @@ function normalizeBuilderConfig<InsertModel, SelectModel>(
 }
 
 function normalizeUpdateMode(
-	updateSlugs: CreateSluggableConfig<any, any>["updateSlugs"],
-): SluggableOptions<any, any>["onUpdate"] | undefined {
+	updateSlugs: CreateSluggableConfig<unknown, unknown>["updateSlugs"],
+): SluggableOptions<unknown, unknown>["onUpdate"] | undefined {
 	if (!updateSlugs) return undefined;
 	if (updateSlugs === "whenSourceChanges") return "updateIfSourceChanged";
 	return updateSlugs;

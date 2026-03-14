@@ -26,7 +26,7 @@ export type Sluggable<
 
 export function createSluggable<
 	TTable extends AnySQLiteTable,
-	Config extends SluggableConfig<TTable> | undefined,
+	Config extends SluggableConfig<TTable> | undefined = undefined,
 >(table: TTable, config?: Config): Sluggable<TTable, Config> {
 	return createSluggableCore<
 		InferInsertModel<TTable>,
