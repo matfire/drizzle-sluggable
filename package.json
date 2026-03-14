@@ -1,80 +1,80 @@
 {
-	"name": "@matfire/drizzle-sluggable",
-	"version": "1.0.0",
-	"description": "Generate unique scoped slugs for Drizzle ORM inserts and updates",
-	"license": "MIT",
-	"author": "Matteo Gassend",
-	"type": "module",
-	"homepage": "https://github.com/matfire/drizzle-sluggable#readme",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/matfire/drizzle-sluggable.git"
-	},
-	"bugs": {
-		"url": "https://github.com/matfire/drizzle-sluggable/issues"
-	},
-	"keywords": [
-		"drizzle",
-		"drizzle-orm",
-		"slug",
-		"slugs",
-		"typescript",
-		"postgres",
-		"mysql",
-		"sqlite"
-	],
-	"scripts": {
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"lint": "biome check",
-		"lint:fix": "npm run lint -- --write",
-		"lint-staged": "lint-staged",
-		"typecheck": "tsc --noEmit",
-		"build": "tsdown",
-		"check": "npm run lint && npm run typecheck && npm run build && npm run test",
-		"prepare": "husky"
-	},
-	"files": [
-		"dist",
-		"README.md",
-		"LICENSE"
-	],
-	"sideEffects": false,
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		},
-		"./pg": {
-			"types": "./dist/pg/index.d.ts",
-			"import": "./dist/pg/index.js"
-		},
-		"./mysql": {
-			"types": "./dist/mysql/index.d.ts",
-			"import": "./dist/mysql/index.js"
-		},
-		"./sqlite": {
-			"types": "./dist/sqlite/index.d.ts",
-			"import": "./dist/sqlite/index.js"
-		}
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
-		"@types/pg": "^8.15.5",
-		"@libsql/client": "^0.17.0",
-		"husky": "^9.1.7",
-		"lint-staged": "^16.1.6",
-		"mysql2": "^3.19.1",
-		"pg": "^8.20.0",
-		"testcontainers": "^11.12.0",
-		"tsdown": "^0.15.1",
-		"typescript": "^5.9.2",
-		"vitest": "^4.1.0"
-	},
-	"peerDependencies": {
-		"drizzle-orm": "^0.44.5"
-	},
-	"lint-staged": {
-		"*.ts": "biome check --write"
-	}
+  "name": "@matfire/drizzle-sluggable",
+  "version": "1.0.0",
+  "description": "Generate unique scoped slugs for Drizzle ORM inserts and updates",
+  "license": "MIT",
+  "author": "Matteo Gassend",
+  "type": "module",
+  "homepage": "https://github.com/matfire/drizzle-sluggable#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matfire/drizzle-sluggable.git"
+  },
+  "bugs": {
+    "url": "https://github.com/matfire/drizzle-sluggable/issues"
+  },
+  "keywords": [
+    "drizzle",
+    "drizzle-orm",
+    "slug",
+    "slugs",
+    "typescript",
+    "postgres",
+    "mysql",
+    "sqlite"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check",
+    "lint:fix": "npm run lint -- --write",
+    "lint-staged": "lint-staged",
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
+    "check": "npm run lint && npm run typecheck && npm run build && npm run test",
+    "prepare": "husky"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./pg": {
+      "types": "./dist/pg/index.d.ts",
+      "import": "./dist/pg/index.js"
+    },
+    "./mysql": {
+      "types": "./dist/mysql/index.d.ts",
+      "import": "./dist/mysql/index.js"
+    },
+    "./sqlite": {
+      "types": "./dist/sqlite/index.d.ts",
+      "import": "./dist/sqlite/index.js"
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.7",
+    "@types/pg": "^8.18.0",
+    "@libsql/client": "^0.17.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "mysql2": "^3.19.1",
+    "pg": "^8.20.0",
+    "testcontainers": "^11.12.0",
+    "tsdown": "^0.21.2",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.0"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^0.44.5"
+  },
+  "lint-staged": {
+    "*.ts": "biome check --write"
+  }
 }
