@@ -246,6 +246,18 @@ import { createSluggable } from "@matfire/drizzle-sluggable/mysql";
 import { createSluggable } from "@matfire/drizzle-sluggable/sqlite";
 ```
 
+## Testing
+
+This repo uses `vitest` for integration tests:
+
+```sh
+npm test
+```
+
+- PostgreSQL and MySQL tests run with `testcontainers`, so Docker must be running locally.
+- SQLite tests use `@libsql/client` with an in-memory database and do not require Docker.
+- Run the full local verification suite with `npm run check`.
+
 ## Notes
 
 - The package expects a Drizzle client that can run `db.select(...).from(...).where(...)`.
