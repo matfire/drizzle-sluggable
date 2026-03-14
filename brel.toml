@@ -1,3 +1,4 @@
+default_branch = "master"
 [release_pr.changelog]
 enabled = true
 output_file = "CHANGELOG.md"
