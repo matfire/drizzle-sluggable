@@ -1,3 +1,14 @@
+## [1.1.0] - 2026-03-14
+
+### 🚀 Features
+
+- Migrate to bun
+
+### 🐛 Bug Fixes
+
+- Update brel workflow
+- Trying to narrow down types
+- Replace biome with oxlint & oxfmt
 ## [1.0.1] - 2026-03-14
 
 ### 🐛 Bug Fixes
