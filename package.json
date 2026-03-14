@@ -1,6 +1,6 @@
 {
   "name": "@matfire/drizzle-sluggable",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate unique scoped slugs for Drizzle ORM inserts and updates",
   "license": "MIT",
   "author": "Matteo Gassend",
