@@ -28,6 +28,203 @@ export type CreateSluggableConfig<InsertModel, SelectModel> = {
 	updateSlugs?: "never" | "whenSourceChanges" | "always";
 };
 
+export type HasDefaultSource<InsertModel> = "title" extends keyof InsertModel
+	? true
+	: "name" extends keyof InsertModel
+		? true
+		: false;
+
+export type HasDefaultSlugField<InsertModel> = "slug" extends keyof InsertModel
+	? true
+	: false;
+
+export type HasDefaultIdField<SelectModel> = "id" extends keyof SelectModel
+	? true
+	: false;
+
+export type ResolveFromState<InsertModel, SelectModel, Config> =
+	Config extends {
+		from: SluggableSource<InsertModel, SelectModel>;
+	}
+		? true
+		: HasDefaultSource<InsertModel>;
+
+export type ResolveToState<InsertModel, Config> = Config extends {
+	to: keyof InsertModel;
+}
+	? true
+	: HasDefaultSlugField<InsertModel>;
+
+export type ResolveIdState<SelectModel, Config> = Config extends {
+	idField: keyof SelectModel;
+}
+	? true
+	: HasDefaultIdField<SelectModel>;
+
+type ExistingRowLoader<SelectModel> =
+	| SelectModel
+	| Promise<SelectModel | null | undefined>
+	| (() =>
+			| SelectModel
+			| null
+			| undefined
+			| Promise<SelectModel | null | undefined>);
+
+type InsertMethod<
+	InsertModel,
+	HasFrom extends boolean,
+	HasTo extends boolean,
+> = HasFrom extends true
+	? HasTo extends true
+		? (db: DBLike, data: InsertModel) => Promise<InsertModel>
+		: never
+	: never;
+
+type UpdateMethod<
+	InsertModel,
+	SelectModel,
+	HasFrom extends boolean,
+	HasTo extends boolean,
+	HasId extends boolean,
+> = HasFrom extends true
+	? HasTo extends true
+		? HasId extends true
+			? (
+					db: DBLike,
+					existing: SelectModel,
+					patch: Partial<InsertModel>,
+				) => Promise<Partial<InsertModel>>
+			: never
+		: never
+	: never;
+
+type UpdateFromMethod<
+	InsertModel,
+	SelectModel,
+	HasFrom extends boolean,
+	HasTo extends boolean,
+	HasId extends boolean,
+> = HasFrom extends true
+	? HasTo extends true
+		? HasId extends true
+			? (
+					db: DBLike,
+					existing: ExistingRowLoader<SelectModel>,
+					patch: Partial<InsertModel>,
+				) => Promise<Partial<InsertModel>>
+			: never
+		: never
+	: never;
+
+export type SluggableBuilderApi<
+	InsertModel extends Record<string, any>,
+	SelectModel extends Record<string, any>,
+	Table,
+	HasFrom extends boolean,
+	HasTo extends boolean,
+	HasId extends boolean,
+> = {
+	from(
+		source: SluggableSource<InsertModel, SelectModel>,
+	): SluggableBuilderApi<InsertModel, SelectModel, Table, true, HasTo, HasId>;
+	to(
+		slugField: keyof InsertModel,
+	): SluggableBuilderApi<InsertModel, SelectModel, Table, HasFrom, true, HasId>;
+	withinScope(
+		scope: SluggableScope<InsertModel, SelectModel>,
+	): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	usingSeparator(
+		separator: string,
+	): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	slugsShouldBeNoLongerThan(
+		maxLength: number,
+	): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	preventSlugs(
+		reserved: string[],
+	): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	usingSlugify(
+		slugify: (input: string, separator: string) => string,
+	): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	usingUniqueResolver(
+		uniqueResolver: SluggableOptions<
+			InsertModel,
+			SelectModel
+		>["customUniqueResolver"],
+	): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	usingIdField(
+		idField: keyof SelectModel,
+	): SluggableBuilderApi<InsertModel, SelectModel, Table, HasFrom, HasTo, true>;
+	doNotRegenerateOnUpdate(): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	regenerateOnEveryUpdate(): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	regenerateOnSourceChange(): SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		HasFrom,
+		HasTo,
+		HasId
+	>;
+	insert: InsertMethod<InsertModel, HasFrom, HasTo>;
+	update: UpdateMethod<InsertModel, SelectModel, HasFrom, HasTo, HasId>;
+	updateFrom: UpdateFromMethod<InsertModel, SelectModel, HasFrom, HasTo, HasId>;
+};
+
 type ResolvedBuilderConfig<InsertModel, SelectModel> = {
 	from?: SluggableSource<InsertModel, SelectModel>;
 	to?: keyof InsertModel;
@@ -47,7 +244,10 @@ type ResolvedBuilderConfig<InsertModel, SelectModel> = {
 class SluggableBuilder<
 	InsertModel extends Record<string, any>,
 	SelectModel extends Record<string, any>,
-	Table,
+	Table extends object,
+	HasFrom extends boolean = false,
+	HasTo extends boolean = false,
+	HasId extends boolean = false,
 > {
 	private config: ResolvedBuilderConfig<InsertModel, SelectModel>;
 
@@ -60,12 +260,26 @@ class SluggableBuilder<
 
 	from(source: SluggableSource<InsertModel, SelectModel>) {
 		this.config.from = source;
-		return this;
+		return this as unknown as SluggableBuilder<
+			InsertModel,
+			SelectModel,
+			Table,
+			true,
+			HasTo,
+			HasId
+		>;
 	}
 
 	to(slugField: keyof InsertModel) {
 		this.config.to = slugField;
-		return this;
+		return this as unknown as SluggableBuilder<
+			InsertModel,
+			SelectModel,
+			Table,
+			HasFrom,
+			true,
+			HasId
+		>;
 	}
 
 	withinScope(scope: SluggableScope<InsertModel, SelectModel>) {
@@ -105,7 +319,14 @@ class SluggableBuilder<
 
 	usingIdField(idField: keyof SelectModel) {
 		this.config.idField = idField;
-		return this;
+		return this as unknown as SluggableBuilder<
+			InsertModel,
+			SelectModel,
+			Table,
+			HasFrom,
+			HasTo,
+			true
+		>;
 	}
 
 	doNotRegenerateOnUpdate() {
@@ -123,7 +344,11 @@ class SluggableBuilder<
 		return this;
 	}
 
-	async insert(db: DBLike, data: InsertModel): Promise<InsertModel> {
+	async insert(
+		this: SluggableBuilder<InsertModel, SelectModel, Table, true, true, HasId>,
+		db: DBLike,
+		data: InsertModel,
+	): Promise<InsertModel> {
 		return makeSlugBeforeInsertCore<InsertModel, SelectModel>({
 			db,
 			table: this.table,
@@ -133,6 +358,7 @@ class SluggableBuilder<
 	}
 
 	async update(
+		this: SluggableBuilder<InsertModel, SelectModel, Table, true, true, true>,
 		db: DBLike,
 		existing: SelectModel,
 		patch: Partial<InsertModel>,
@@ -144,6 +370,17 @@ class SluggableBuilder<
 			patch,
 			options: this.resolveUpdateOptions(existing, patch),
 		});
+	}
+
+	async updateFrom(
+		this: SluggableBuilder<InsertModel, SelectModel, Table, true, true, true>,
+		db: DBLike,
+		existing: ExistingRowLoader<SelectModel>,
+		patch: Partial<InsertModel>,
+	): Promise<Partial<InsertModel>> {
+		const resolvedExisting = await resolveExistingRow(existing);
+
+		return this.update(db, resolvedExisting, patch);
 	}
 
 	private resolveInsertOptions(
@@ -167,7 +404,12 @@ class SluggableBuilder<
 		return {
 			source,
 			slugField,
-			scope: resolveScope(this.config.scope, data as Partial<InsertModel>),
+			scope: resolveScope<InsertModel, SelectModel>(
+				this.config.scope as
+					| SluggableScope<InsertModel, SelectModel>
+					| undefined,
+				data as Partial<InsertModel> & Partial<SelectModel>,
+			) as Record<string, unknown> | undefined,
 			separator: this.config.separator,
 			maxLength: this.config.maxLength,
 			reserved: this.config.reserved,
@@ -209,7 +451,12 @@ class SluggableBuilder<
 		return {
 			source,
 			slugField,
-			scope: resolveScope(this.config.scope, scopeInput),
+			scope: resolveScope<InsertModel, SelectModel>(
+				this.config.scope as
+					| SluggableScope<InsertModel, SelectModel>
+					| undefined,
+				scopeInput,
+			) as Record<string, unknown> | undefined,
 			separator: this.config.separator,
 			maxLength: this.config.maxLength,
 			reserved: this.config.reserved,
@@ -224,9 +471,47 @@ class SluggableBuilder<
 export function createSluggableCore<
 	InsertModel extends Record<string, any>,
 	SelectModel extends Record<string, any>,
-	Table,
->(table: Table, config?: CreateSluggableConfig<InsertModel, SelectModel>) {
-	return new SluggableBuilder<InsertModel, SelectModel, Table>(table, config);
+	Table extends object,
+	Config extends CreateSluggableConfig<InsertModel, SelectModel> | undefined,
+>(table: Table, config?: Config) {
+	return new SluggableBuilder<
+		InsertModel,
+		SelectModel,
+		Table,
+		ResolveFromState<InsertModel, SelectModel, Config>,
+		ResolveToState<InsertModel, Config>,
+		ResolveIdState<SelectModel, Config>
+	>(table, config) as unknown as SluggableBuilderApi<
+		InsertModel,
+		SelectModel,
+		Table,
+		ResolveFromState<InsertModel, SelectModel, Config>,
+		ResolveToState<InsertModel, Config>,
+		ResolveIdState<SelectModel, Config>
+	>;
+}
+
+async function resolveExistingRow<SelectModel>(
+	existing: ExistingRowLoader<SelectModel>,
+): Promise<SelectModel> {
+	const value =
+		typeof existing === "function"
+			? await (
+					existing as () =>
+						| SelectModel
+						| null
+						| undefined
+						| Promise<SelectModel | null | undefined>
+				)()
+			: await existing;
+
+	if (!value) {
+		throw new Error(
+			"Unable to load the existing row for update. Make sure the row exists before generating a slug patch.",
+		);
+	}
+
+	return value;
 }
 
 async function makeSlugBeforeInsertCore<

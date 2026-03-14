@@ -29,10 +29,32 @@ export type SluggableLike = {
 		existing: SelectRow,
 		patch: Partial<InsertRow>,
 	): Promise<Partial<InsertRow>>;
+	updateFrom(
+		db: DBLike,
+		existing:
+			| SelectRow
+			| Promise<SelectRow | null | undefined>
+			| (() =>
+					| SelectRow
+					| null
+					| undefined
+					| Promise<SelectRow | null | undefined>),
+		patch: Partial<InsertRow>,
+	): Promise<Partial<InsertRow>>;
+	from(
+		source:
+			| keyof InsertRow
+			| (keyof InsertRow)[]
+			| ((row: ScopeInput) => string),
+	): SluggableLike;
+	to(field: keyof InsertRow): SluggableLike;
 	withinScope(
 		scope:
 			| (keyof InsertRow)[]
 			| ((row: ScopeInput) => Record<string, unknown> | undefined),
+	): SluggableLike;
+	usingSlugify(
+		slugify: (input: string, separator: string) => string,
 	): SluggableLike;
 	doNotRegenerateOnUpdate(): SluggableLike;
 	regenerateOnEveryUpdate(): SluggableLike;
@@ -110,6 +132,54 @@ export function defineDialectSuite(
 
 			expect(first.slug).toBe("scoped-post");
 			expect(second.slug).toBe("scoped-post");
+		});
+
+		it("supports computed scope functions", async () => {
+			const sluggable = harness
+				.makeSluggable()
+				.withinScope((row) => ({ categoryId: row.categoryId }));
+
+			const first = await sluggable.insert(harness.db, {
+				title: "Function Scoped Post",
+				categoryId: 1,
+			});
+			await harness.insertRow(asPersistedInsert(first));
+
+			const second = await sluggable.insert(harness.db, {
+				title: "Function Scoped Post",
+				categoryId: 2,
+			});
+
+			expect(first.slug).toBe("function-scoped-post");
+			expect(second.slug).toBe("function-scoped-post");
+		});
+
+		it("supports multiple source fields", async () => {
+			const sluggable = harness
+				.makeSluggable()
+				.from(["title", "categoryId"])
+				.to("slug");
+
+			const values = await sluggable.insert(harness.db, {
+				title: "Multi Source",
+				categoryId: 7,
+			});
+
+			expect(values.slug).toBe("multi-source-7");
+		});
+
+		it("supports computed source functions", async () => {
+			const sluggable = harness
+				.makeSluggable()
+				.from((row) => `${row.title ?? ""} category ${row.categoryId ?? ""}`)
+				.to("slug");
+
+			const values = await sluggable.insert(harness.db, {
+				title: "Function Source",
+				categoryId: 3,
+			});
+
+			expect(values.slug).toBe("function-source-category-3");
 		});
 
 		it("normalizes provided slugs and resolves collisions", async () => {
@@ -195,6 +265,26 @@ export function defineDialectSuite(
 			expect(patch.slug).toBe("hello-world");
 		});
 
+		it("can load the existing row inside the update helper", async () => {
+			const sluggable = harness.makeSluggable();
+
+			const created = await sluggable.insert(harness.db, {
+				title: "Inline Fetch",
+				categoryId: 1,
+			});
+			const id = await harness.insertRow(asPersistedInsert(created));
+
+			const patch = await sluggable.updateFrom(
+				harness.db,
+				() => harness.getRow(id),
+				{
+					title: "Inline Fetch Updated",
+				},
+			);
+
+			expect(patch.slug).toBe("inline-fetch-updated");
+		});
+
 		it("supports reserved slugs and max length constraints", async () => {
 			const reservedSluggable = harness.makeSluggable().preventSlugs(["admin"]);
 			const limitedSluggable = harness
@@ -223,6 +313,25 @@ export function defineDialectSuite(
 			expect(secondLimited.slug?.length).toBeLessThanOrEqual(12);
 			expect(secondLimited.slug).toMatch(/-2$/);
 		});
+
+		it("supports custom slugify functions", async () => {
+			const sluggable = harness
+				.makeSluggable()
+				.usingSlugify((input, separator) => {
+					const normalized = input
+						.trim()
+						.toLowerCase()
+						.replace(/\s+/g, separator);
+					return `custom-${normalized}`;
+				});
+
+			const values = await sluggable.insert(harness.db, {
+				title: "Hello Drizzle",
+				categoryId: 1,
+			});
+
+			expect(values.slug).toBe("custom-hello-drizzle");
+		});
 	});
 }
 
@@ -238,16 +347,20 @@ export function asPersistedInsert(values: InsertRow): Required<InsertRow> {
 	};
 }
 
-export function mapSelectRow(row: {
-	id: number | bigint;
-	title: string;
-	slug: string;
-	category_id: number | bigint;
-}): SelectRow {
+export function mapSelectRow(
+	row:
+		| {
+				id: number | bigint;
+				title: string;
+				slug: string;
+				category_id: number | bigint;
+		  }
+		| Record<string, unknown>,
+): SelectRow {
 	return {
 		id: Number(row.id),
-		title: row.title,
-		slug: row.slug,
+		title: String(row.title),
+		slug: String(row.slug),
 		categoryId: Number(row.category_id),
 	};
 }

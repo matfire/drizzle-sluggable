@@ -29,8 +29,9 @@
 		"lint": "biome check",
 		"lint:fix": "npm run lint -- --write",
 		"lint-staged": "lint-staged",
+		"typecheck": "tsc --noEmit",
 		"build": "tsdown",
-		"check": "npm run lint && npm run build && npm run test",
+		"check": "npm run lint && npm run typecheck && npm run build && npm run test",
 		"prepare": "husky"
 	},
 	"files": [
@@ -40,6 +41,10 @@
 	],
 	"sideEffects": false,
 	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
 		"./pg": {
 			"types": "./dist/pg/index.d.ts",
 			"import": "./dist/pg/index.js"
@@ -55,6 +60,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
+		"@types/pg": "^8.15.5",
 		"@libsql/client": "^0.17.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.1.6",

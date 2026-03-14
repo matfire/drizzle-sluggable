@@ -33,6 +33,27 @@ await db.insert(posts).values(values);
 
 If another row already uses `hello-drizzle`, the package generates `hello-drizzle-2`, `hello-drizzle-3`, and so on.
 
+## Driver imports
+
+Use the dialect-specific entrypoint that matches your Drizzle client:
+
+```ts
+import { createSluggable } from "@matfire/drizzle-sluggable/pg";
+import { createSluggable } from "@matfire/drizzle-sluggable/mysql";
+import { createSluggable } from "@matfire/drizzle-sluggable/sqlite";
+```
+
+The package also exposes named root exports if you prefer one import path for shared utilities:
+
+```ts
+import {
+	createPgSluggable,
+	createMysqlSluggable,
+	createSqliteSluggable,
+	defaultSlugify,
+} from "@matfire/drizzle-sluggable";
+```
+
 ## Why this API
 
 Instead of passing `table`, `source`, `slugField`, and update behavior on every call, you bind slug rules to a table once and reuse them:
@@ -50,14 +71,18 @@ await postSlug.update(db, existingPost, patch);
 ## Example schema
 
 ```ts
-import { integer, pgTable, serial, text } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-export const posts = pgTable("posts", {
-	id: serial("id").primaryKey(),
-	title: text("title").notNull(),
-	slug: text("slug").notNull(),
-	categoryId: integer("category_id").notNull(),
-});
+export const posts = pgTable(
+	"posts",
+	{
+		id: serial("id").primaryKey(),
+		title: text("title").notNull(),
+		slug: text("slug").notNull(),
+		categoryId: integer("category_id").notNull(),
+	},
+	(table) => [uniqueIndex("posts_slug_idx").on(table.slug)],
+);
 ```
 
 ## Insert
@@ -102,7 +127,20 @@ const patch = await postSlug.update(db, existingPost, {
 await db.update(posts).set(patch).where(eq(posts.id, existingPost.id));
 ```
 
-`update` needs the current row so it can compare source values and exclude that row from the uniqueness check.
+`update()` needs the current row so it can compare source values and exclude that row from the uniqueness check.
+
+If you want less fetch-then-update ceremony, you can pass a promise or loader to `updateFrom()`:
+
+```ts
+const patch = await postSlug.updateFrom(
+	db,
+	() =>
+		db.query.posts.findFirst({
+			where: eq(posts.id, 1),
+		}),
+	{ title: "Hello Drizzle ORM" },
+);
+```
 
 ## Sensible defaults
 
@@ -113,9 +151,37 @@ await db.update(posts).set(patch).where(eq(posts.id, existingPost.id));
 - `from: "title"` or `from: "name"` when one of those columns exists
 - update behavior defaults to regenerating only when source fields change
 
-If a field cannot be inferred, the builder throws a clear error telling you which method to configure.
+When TypeScript can see those conventions, `insert()` and `update()` become available immediately. Otherwise, configure the missing pieces with `.from(...)`, `.to(...)`, or `.usingIdField(...)`.
 
-## Common patterns
+Runtime checks still exist and throw clear errors if a required field cannot be inferred.
+
+## Production checklist
+
+- Add a unique index for every slug constraint you rely on.
+- Use a composite unique index when slugs are scoped, for example `(category_id, slug)`.
+- Treat generated uniqueness as an application-level convenience, not a replacement for database constraints.
+- Expect concurrent inserts to race in production without a DB constraint; the index is the final source of truth.
+
+Scoped uniqueness example:
+
+```ts
+import { integer, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
+
+export const posts = pgTable(
+	"posts",
+	{
+		id: serial("id").primaryKey(),
+		title: text("title").notNull(),
+		slug: text("slug").notNull(),
+		categoryId: integer("category_id").notNull(),
+	},
+	(table) => [
+		uniqueIndex("posts_category_slug_idx").on(table.categoryId, table.slug),
+	],
+);
+```
+
+## Recipes
 
 ### Scoped uniqueness
 
@@ -127,11 +193,6 @@ const postSlug = createSluggable(posts, {
 	to: "slug",
 	scope: ["categoryId"],
 });
-
-const values = await postSlug.insert(db, {
-	title: "Hello Drizzle",
-	categoryId: 1,
-});
 ```
 
 You can also compute the scope yourself:
@@ -141,6 +202,25 @@ const postSlug = createSluggable(posts)
 	.from("title")
 	.to("slug")
 	.withinScope((row) => ({ categoryId: row.categoryId }));
+```
+
+### Multiple source fields
+
+Combine several columns into one slug source:
+
+```ts
+const postSlug = createSluggable(posts, {
+	from: ["title", "categoryId"],
+	to: "slug",
+});
+```
+
+Or compute the source yourself:
+
+```ts
+const postSlug = createSluggable(posts)
+	.from((row) => `${row.title ?? ""} ${row.categoryId ?? ""}`)
+	.to("slug");
 ```
 
 ### Manual slug input
@@ -177,6 +257,15 @@ const postSlug = createSluggable(posts)
 	.from("title")
 	.to("slug")
 	.regenerateOnEveryUpdate();
+```
+
+### Tenant or workspace scope
+
+```ts
+const postSlug = createSluggable(posts)
+	.from("title")
+	.to("slug")
+	.withinScope((row) => ({ workspaceId: row.workspaceId }));
 ```
 
 ### Reserved slugs
@@ -237,14 +326,7 @@ Available builder methods:
 - `doNotRegenerateOnUpdate()`
 - `regenerateOnEveryUpdate()`
 - `regenerateOnSourceChange()`
-
-## Driver imports
-
-```ts
-import { createSluggable } from "@matfire/drizzle-sluggable/pg";
-import { createSluggable } from "@matfire/drizzle-sluggable/mysql";
-import { createSluggable } from "@matfire/drizzle-sluggable/sqlite";
-```
+- `updateFrom(db, existing | promise | loader, patch)`
 
 ## Testing
 
