@@ -1,0 +1,10 @@
+pre-commit:
+  commands:
+    oxfmt:
+      glob: "**/*.ts"
+      run: npm run format ${staged_files}
+      stage_fixed: true
+    oxlint:
+      glob: "**/*.ts"
+      run: npm run lint:fix {staged_files}
+      stage_fixed: true

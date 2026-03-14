@@ -3,157 +3,141 @@
 import { type SQL, sql } from "drizzle-orm";
 
 export type DBLike = {
-	select: Function;
-	insert?: Function;
-	update?: Function;
-	delete?: Function;
+  select: Function;
+  insert?: Function;
+  update?: Function;
+  delete?: Function;
 };
 
 export type SluggableSource<InsertModel, SelectModel = InsertModel> =
-	| keyof InsertModel
-	| (keyof InsertModel)[]
-	| ((data: Partial<InsertModel> & Partial<SelectModel>) => string);
+  | keyof InsertModel
+  | (keyof InsertModel)[]
+  | ((data: Partial<InsertModel> & Partial<SelectModel>) => string);
 
 export type SluggableScope<InsertModel, SelectModel = InsertModel> =
-	| Partial<InsertModel>
-	| (keyof InsertModel)[]
-	| ((
-			data: Partial<InsertModel> & Partial<SelectModel>,
-	  ) => Record<string, unknown> | undefined);
+  | Partial<InsertModel>
+  | (keyof InsertModel)[]
+  | ((data: Partial<InsertModel> & Partial<SelectModel>) => Record<string, unknown> | undefined);
 
 export type SluggableOptions<InsertModel, SelectModel> = {
-	source: SluggableSource<InsertModel, SelectModel>;
-	slugField: keyof InsertModel;
-	scope?: Record<string, unknown>;
-	separator?: string;
-	maxLength?: number;
-	onUpdate?: "never" | "updateIfSourceChanged" | "always";
-	reserved?: string[];
-	slugify?: (input: string, separator: string) => string;
-	customUniqueResolver?: (params: {
-		baseSlug: string;
-		separator: string;
-		maxLength?: number;
-		existingSlugs: string[];
-	}) => string;
-	idField?: keyof SelectModel;
+  source: SluggableSource<InsertModel, SelectModel>;
+  slugField: keyof InsertModel;
+  scope?: Record<string, unknown>;
+  separator?: string;
+  maxLength?: number;
+  onUpdate?: "never" | "updateIfSourceChanged" | "always";
+  reserved?: string[];
+  slugify?: (input: string, separator: string) => string;
+  customUniqueResolver?: (params: {
+    baseSlug: string;
+    separator: string;
+    maxLength?: number;
+    existingSlugs: string[];
+  }) => string;
+  idField?: keyof SelectModel;
 };
 
 export function buildBaseString<InsertModel>(
-	data: Partial<InsertModel>,
-	source:
-		| keyof InsertModel
-		| (keyof InsertModel)[]
-		| ((data: Partial<InsertModel>) => string),
+  data: Partial<InsertModel>,
+  source: keyof InsertModel | (keyof InsertModel)[] | ((data: Partial<InsertModel>) => string),
 ): string {
-	if (typeof source === "function") return source(data);
-	const fields = Array.isArray(source) ? source : [source];
-	return fields
-		.map((k) => (data[k] as unknown as string) ?? "")
-		.filter(Boolean)
-		.join(" ");
+  if (typeof source === "function") return source(data);
+  const fields = Array.isArray(source) ? source : [source];
+  return fields
+    .map((k) => (data[k] as unknown as string) ?? "")
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function resolveScope<InsertModel, SelectModel>(
-	scope:
-		| SluggableScope<InsertModel, SelectModel>
-		| Record<string, unknown>
-		| undefined,
-	data: Partial<InsertModel> & Partial<SelectModel>,
+  scope: SluggableScope<InsertModel, SelectModel> | Record<string, unknown> | undefined,
+  data: Partial<InsertModel> & Partial<SelectModel>,
 ): Record<string, unknown> | undefined {
-	if (!scope) return undefined;
-	if (typeof scope === "function") return scope(data);
-	if (Array.isArray(scope)) {
-		return Object.fromEntries(
-			scope
-				.map((field) => [field as string, data[field]])
-				.filter(([, value]) => value !== undefined),
-		);
-	}
-	return scope;
+  if (!scope) return undefined;
+  if (typeof scope === "function") return scope(data);
+  if (Array.isArray(scope)) {
+    return Object.fromEntries(
+      scope
+        .map((field) => [field as string, data[field]])
+        .filter(([, value]) => value !== undefined),
+    );
+  }
+  return scope;
 }
 
 export function hasColumn(table: object, column: string): boolean {
-	return column in table;
+  return column in table;
 }
 
-export function truncateWithSuffix(
-	base: string,
-	suffix: string,
-	maxLength?: number,
-): string {
-	if (!maxLength) return base + suffix;
-	const room = Math.max(0, maxLength - suffix.length);
-	const truncatedBase = room > 0 ? base.slice(0, room) : "";
-	return truncatedBase + suffix;
+export function truncateWithSuffix(base: string, suffix: string, maxLength?: number): string {
+  if (!maxLength) return base + suffix;
+  const room = Math.max(0, maxLength - suffix.length);
+  const truncatedBase = room > 0 ? base.slice(0, room) : "";
+  return truncatedBase + suffix;
 }
 
 export async function fetchExistingSlugs({
-	db,
-	table,
-	slugColumn,
-	baseSlug,
-	separator,
-	scope,
-	excludeId,
-	idColumn,
+  db,
+  table,
+  slugColumn,
+  baseSlug,
+  separator,
+  scope,
+  excludeId,
+  idColumn,
 }: {
-	db: DBLike;
-	table: any;
-	slugColumn: any; // a reference to table[slugField]
-	baseSlug: string;
-	separator: string;
-	scope?: Record<string, unknown>;
-	excludeId?: unknown;
-	idColumn?: any; // a reference to table[idField]
+  db: DBLike;
+  table: any;
+  slugColumn: any; // a reference to table[slugField]
+  baseSlug: string;
+  separator: string;
+  scope?: Record<string, unknown>;
+  excludeId?: unknown;
+  idColumn?: any; // a reference to table[idField]
 }): Promise<string[]> {
-	const likePattern = `${baseSlug}${separator}%`;
+  const likePattern = `${baseSlug}${separator}%`;
 
-	const conditions: SQL[] = [
-		sql`${slugColumn} = ${baseSlug}`,
-		sql`${slugColumn} LIKE ${likePattern}`,
-	];
-	const whereClauses: SQL[] = [sql`(${sql.join(conditions, sql` OR `)})`];
+  const conditions: SQL[] = [
+    sql`${slugColumn} = ${baseSlug}`,
+    sql`${slugColumn} LIKE ${likePattern}`,
+  ];
+  const whereClauses: SQL[] = [sql`(${sql.join(conditions, sql` OR `)})`];
 
-	if (scope && Object.keys(scope).length > 0) {
-		for (const [col, val] of Object.entries(scope)) {
-			whereClauses.push(sql`${(table as any)[col]} = ${val as any}`);
-		}
-	}
+  if (scope && Object.keys(scope).length > 0) {
+    for (const [col, val] of Object.entries(scope)) {
+      whereClauses.push(sql`${(table as any)[col]} = ${val as any}`);
+    }
+  }
 
-	if (excludeId != null && idColumn) {
-		whereClauses.push(sql`${idColumn} <> ${excludeId as any}`);
-	}
+  if (excludeId != null && idColumn) {
+    whereClauses.push(sql`${idColumn} <> ${excludeId as any}`);
+  }
 
-	const rows = await (db as any)
-		.select({ slug: slugColumn })
-		.from(table)
-		.where(sql.join(whereClauses, sql` AND `));
+  const rows = await (db as any)
+    .select({ slug: slugColumn })
+    .from(table)
+    .where(sql.join(whereClauses, sql` AND `));
 
-	return rows.map((r: any) => r.slug as string);
+  return rows.map((r: any) => r.slug as string);
 }
 
 export function defaultUniqueResolver(params: {
-	baseSlug: string;
-	separator: string;
-	maxLength?: number;
-	existingSlugs: string[];
+  baseSlug: string;
+  separator: string;
+  maxLength?: number;
+  existingSlugs: string[];
 }): string {
-	const { baseSlug, separator, maxLength, existingSlugs } = params;
+  const { baseSlug, separator, maxLength, existingSlugs } = params;
 
-	if (!existingSlugs.includes(baseSlug)) {
-		return maxLength ? baseSlug.slice(0, maxLength) : baseSlug;
-	}
+  if (!existingSlugs.includes(baseSlug)) {
+    return maxLength ? baseSlug.slice(0, maxLength) : baseSlug;
+  }
 
-	const taken = new Set(existingSlugs);
-	let counter = 2;
-	while (true) {
-		const candidate = truncateWithSuffix(
-			baseSlug,
-			`${separator}${counter}`,
-			maxLength,
-		);
-		if (!taken.has(candidate)) return candidate;
-		counter++;
-	}
+  const taken = new Set(existingSlugs);
+  let counter = 2;
+  while (true) {
+    const candidate = truncateWithSuffix(baseSlug, `${separator}${counter}`, maxLength);
+    if (!taken.has(candidate)) return candidate;
+    counter++;
+  }
 }

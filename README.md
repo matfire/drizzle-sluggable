@@ -19,12 +19,12 @@ import { createSluggable } from "@matfire/drizzle-sluggable/pg";
 import { posts } from "./schema";
 
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
+  from: "title",
+  to: "slug",
 });
 
 const values = await postSlug.insert(db, {
-	title: "Hello Drizzle",
+  title: "Hello Drizzle",
 });
 
 await db.insert(posts).values(values);
@@ -47,10 +47,10 @@ The package also exposes named root exports if you prefer one import path for sh
 
 ```ts
 import {
-	createPgSluggable,
-	createMysqlSluggable,
-	createSqliteSluggable,
-	defaultSlugify,
+  createPgSluggable,
+  createMysqlSluggable,
+  createSqliteSluggable,
+  defaultSlugify,
 } from "@matfire/drizzle-sluggable";
 ```
 
@@ -60,8 +60,8 @@ Instead of passing `table`, `source`, `slugField`, and update behavior on every 
 
 ```ts
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
+  from: "title",
+  to: "slug",
 });
 
 await postSlug.insert(db, data);
@@ -74,14 +74,14 @@ await postSlug.update(db, existingPost, patch);
 import { integer, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const posts = pgTable(
-	"posts",
-	{
-		id: serial("id").primaryKey(),
-		title: text("title").notNull(),
-		slug: text("slug").notNull(),
-		categoryId: integer("category_id").notNull(),
-	},
-	(table) => [uniqueIndex("posts_slug_idx").on(table.slug)],
+  "posts",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    categoryId: integer("category_id").notNull(),
+  },
+  (table) => [uniqueIndex("posts_slug_idx").on(table.slug)],
 );
 ```
 
@@ -91,13 +91,13 @@ export const posts = pgTable(
 import { createSluggable } from "@matfire/drizzle-sluggable/pg";
 
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
+  from: "title",
+  to: "slug",
 });
 
 const values = await postSlug.insert(db, {
-	title: "Hello Drizzle",
-	categoryId: 1,
+  title: "Hello Drizzle",
+  categoryId: 1,
 });
 
 await db.insert(posts).values(values);
@@ -110,18 +110,18 @@ import { eq } from "drizzle-orm";
 import { createSluggable } from "@matfire/drizzle-sluggable/pg";
 
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
+  from: "title",
+  to: "slug",
 });
 
 const existingPost = await db.query.posts.findFirst({
-	where: eq(posts.id, 1),
+  where: eq(posts.id, 1),
 });
 
 if (!existingPost) throw new Error("Post not found");
 
 const patch = await postSlug.update(db, existingPost, {
-	title: "Hello Drizzle ORM",
+  title: "Hello Drizzle ORM",
 });
 
 await db.update(posts).set(patch).where(eq(posts.id, existingPost.id));
@@ -133,12 +133,12 @@ If you want less fetch-then-update ceremony, you can pass a promise or loader to
 
 ```ts
 const patch = await postSlug.updateFrom(
-	db,
-	() =>
-		db.query.posts.findFirst({
-			where: eq(posts.id, 1),
-		}),
-	{ title: "Hello Drizzle ORM" },
+  db,
+  () =>
+    db.query.posts.findFirst({
+      where: eq(posts.id, 1),
+    }),
+  { title: "Hello Drizzle ORM" },
 );
 ```
 
@@ -168,16 +168,14 @@ Scoped uniqueness example:
 import { integer, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const posts = pgTable(
-	"posts",
-	{
-		id: serial("id").primaryKey(),
-		title: text("title").notNull(),
-		slug: text("slug").notNull(),
-		categoryId: integer("category_id").notNull(),
-	},
-	(table) => [
-		uniqueIndex("posts_category_slug_idx").on(table.categoryId, table.slug),
-	],
+  "posts",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    categoryId: integer("category_id").notNull(),
+  },
+  (table) => [uniqueIndex("posts_category_slug_idx").on(table.categoryId, table.slug)],
 );
 ```
 
@@ -189,9 +187,9 @@ Keep slugs unique per category, tenant, workspace, or any other subset of rows.
 
 ```ts
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
-	scope: ["categoryId"],
+  from: "title",
+  to: "slug",
+  scope: ["categoryId"],
 });
 ```
 
@@ -199,9 +197,9 @@ You can also compute the scope yourself:
 
 ```ts
 const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.withinScope((row) => ({ categoryId: row.categoryId }));
+  .from("title")
+  .to("slug")
+  .withinScope((row) => ({ categoryId: row.categoryId }));
 ```
 
 ### Multiple source fields
@@ -210,8 +208,8 @@ Combine several columns into one slug source:
 
 ```ts
 const postSlug = createSluggable(posts, {
-	from: ["title", "categoryId"],
-	to: "slug",
+  from: ["title", "categoryId"],
+  to: "slug",
 });
 ```
 
@@ -219,21 +217,21 @@ Or compute the source yourself:
 
 ```ts
 const postSlug = createSluggable(posts)
-	.from((row) => `${row.title ?? ""} ${row.categoryId ?? ""}`)
-	.to("slug");
+  .from((row) => `${row.title ?? ""} ${row.categoryId ?? ""}`)
+  .to("slug");
 ```
 
 ### Manual slug input
 
 ```ts
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
+  from: "title",
+  to: "slug",
 });
 
 const values = await postSlug.insert(db, {
-	title: "Ignored for slug because one was provided",
-	slug: "My Custom URL",
+  title: "Ignored for slug because one was provided",
+  slug: "My Custom URL",
 });
 
 // values.slug === "my-custom-url" or "my-custom-url-2"
@@ -244,37 +242,28 @@ Provided slugs are still normalized and checked for uniqueness.
 ### Keep the same slug after updates
 
 ```ts
-const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.doNotRegenerateOnUpdate();
+const postSlug = createSluggable(posts).from("title").to("slug").doNotRegenerateOnUpdate();
 ```
 
 ### Always regenerate on updates
 
 ```ts
-const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.regenerateOnEveryUpdate();
+const postSlug = createSluggable(posts).from("title").to("slug").regenerateOnEveryUpdate();
 ```
 
 ### Tenant or workspace scope
 
 ```ts
 const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.withinScope((row) => ({ workspaceId: row.workspaceId }));
+  .from("title")
+  .to("slug")
+  .withinScope((row) => ({ workspaceId: row.workspaceId }));
 ```
 
 ### Reserved slugs
 
 ```ts
-const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.preventSlugs(["admin", "new"]);
+const postSlug = createSluggable(posts).from("title").to("slug").preventSlugs(["admin", "new"]);
 ```
 
 If the generated slug is reserved, the package keeps adding numeric suffixes until it finds an allowed value.
@@ -283,11 +272,9 @@ If the generated slug is reserved, the package keeps adding numeric suffixes unt
 
 ```ts
 const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.usingSlugify((input, separator) =>
-		input.trim().toLowerCase().replace(/\s+/g, separator),
-	);
+  .from("title")
+  .to("slug")
+  .usingSlugify((input, separator) => input.trim().toLowerCase().replace(/\s+/g, separator));
 ```
 
 ## Builder API
@@ -296,9 +283,9 @@ Start with a config object:
 
 ```ts
 const postSlug = createSluggable(posts, {
-	from: "title",
-	to: "slug",
-	scope: ["categoryId"],
+  from: "title",
+  to: "slug",
+  scope: ["categoryId"],
 });
 ```
 
@@ -306,10 +293,10 @@ Or configure it fluently:
 
 ```ts
 const postSlug = createSluggable(posts)
-	.from("title")
-	.to("slug")
-	.withinScope(["categoryId"])
-	.slugsShouldBeNoLongerThan(80);
+  .from("title")
+  .to("slug")
+  .withinScope(["categoryId"])
+  .slugsShouldBeNoLongerThan(80);
 ```
 
 Available builder methods:

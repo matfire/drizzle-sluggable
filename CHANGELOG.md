@@ -4,6 +4,7 @@
 
 - Updated tsdown to fix build
 - Lock
+
 ## [1.0.0] - 2026-03-14
 
 ### 🚀 Features
