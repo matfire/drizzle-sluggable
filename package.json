@@ -31,21 +31,22 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./pg": {
-      "types": "./dist/pg/index.d.ts",
-      "import": "./dist/pg/index.js"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./mysql": {
-      "types": "./dist/mysql/index.d.ts",
-      "import": "./dist/mysql/index.js"
+      "import": "./dist/mysql/index.mjs",
+      "types": "./dist/mysql/index.d.mts"
+  },
+    "./pg": {
+      "import": "./dist/pg/index.mjs",
+      "types": "./dist/pg/index.d.mts"
     },
     "./sqlite": {
-      "types": "./dist/sqlite/index.d.ts",
-      "import": "./dist/sqlite/index.js"
-    }
+      "import": "./dist/sqlite/index.mjs",
+      "types": "./dist/sqlite/index.d.mts"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
