@@ -1,23 +1,43 @@
 {
 	"name": "@matfire/drizzle-sluggable",
 	"version": "0.0.1",
-	"description": "",
+	"description": "Generate unique scoped slugs for Drizzle ORM inserts and updates",
 	"license": "MIT",
 	"author": "Matteo Gassend",
 	"type": "module",
+	"homepage": "https://github.com/matfire/drizzle-sluggable#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/matfire/drizzle-sluggable.git"
+	},
+	"bugs": {
+		"url": "https://github.com/matfire/drizzle-sluggable/issues"
+	},
+	"keywords": [
+		"drizzle",
+		"drizzle-orm",
+		"slug",
+		"slugs",
+		"typescript",
+		"postgres",
+		"mysql",
+		"sqlite"
+	],
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
+		"test": "npm run lint && npm run build",
 		"lint": "biome check",
 		"lint:fix": "npm run lint -- --write",
 		"lint-staged": "lint-staged",
 		"build": "tsdown",
 		"prepare": "husky"
 	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"sideEffects": false,
 	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		},
 		"./pg": {
 			"types": "./dist/pg/index.d.ts",
 			"import": "./dist/pg/index.js"
