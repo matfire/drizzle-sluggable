@@ -9,10 +9,22 @@ export type DBLike = {
 	delete?: Function;
 };
 
+export type SluggableSource<InsertModel, SelectModel = InsertModel> =
+	| keyof InsertModel
+	| (keyof InsertModel)[]
+	| ((data: Partial<InsertModel> & Partial<SelectModel>) => string);
+
+export type SluggableScope<InsertModel, SelectModel = InsertModel> =
+	| Partial<InsertModel>
+	| (keyof InsertModel)[]
+	| ((
+			data: Partial<InsertModel> & Partial<SelectModel>,
+	  ) => Record<string, unknown> | undefined);
+
 export type SluggableOptions<InsertModel, SelectModel> = {
-	source: (keyof InsertModel)[] | ((data: Partial<InsertModel>) => string);
+	source: SluggableSource<InsertModel, SelectModel>;
 	slugField: keyof InsertModel;
-	scope?: Partial<InsertModel>;
+	scope?: Record<string, unknown>;
 	separator?: string;
 	maxLength?: number;
 	onUpdate?: "never" | "updateIfSourceChanged" | "always";
@@ -29,13 +41,40 @@ export type SluggableOptions<InsertModel, SelectModel> = {
 
 export function buildBaseString<InsertModel>(
 	data: Partial<InsertModel>,
-	source: (keyof InsertModel)[] | ((data: Partial<InsertModel>) => string),
+	source:
+		| keyof InsertModel
+		| (keyof InsertModel)[]
+		| ((data: Partial<InsertModel>) => string),
 ): string {
 	if (typeof source === "function") return source(data);
-	return source
+	const fields = Array.isArray(source) ? source : [source];
+	return fields
 		.map((k) => (data[k] as unknown as string) ?? "")
 		.filter(Boolean)
 		.join(" ");
+}
+
+export function resolveScope<InsertModel, SelectModel>(
+	scope:
+		| SluggableScope<InsertModel, SelectModel>
+		| Record<string, unknown>
+		| undefined,
+	data: Partial<InsertModel> & Partial<SelectModel>,
+): Record<string, unknown> | undefined {
+	if (!scope) return undefined;
+	if (typeof scope === "function") return scope(data);
+	if (Array.isArray(scope)) {
+		return Object.fromEntries(
+			scope
+				.map((field) => [field as string, data[field]])
+				.filter(([, value]) => value !== undefined),
+		);
+	}
+	return scope;
+}
+
+export function hasColumn(table: object, column: string): boolean {
+	return column in table;
 }
 
 export function truncateWithSuffix(

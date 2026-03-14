@@ -1,36 +1,26 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type { AnyMySqlTable } from "drizzle-orm/mysql-core";
-import type { DBLike, SluggableOptions } from "../core";
-import { makeSlugBeforeInsertCore, makeSlugBeforeUpdateCore } from "../core";
+import type { CreateSluggableConfig } from "../core";
+import { createSluggableCore } from "../core";
 
-export type MySqlSluggableOptions<TTable extends AnyMySqlTable> =
-	SluggableOptions<InferInsertModel<TTable>, InferSelectModel<TTable>>;
+export type SluggableConfig<TTable extends AnyMySqlTable> =
+	CreateSluggableConfig<InferInsertModel<TTable>, InferSelectModel<TTable>>;
 
-export async function makeSlugBeforeInsert<
-	TTable extends AnyMySqlTable,
->(params: {
-	db: DBLike;
-	table: TTable;
-	data: InferInsertModel<TTable>;
-	options: MySqlSluggableOptions<TTable>;
-}): Promise<InferInsertModel<TTable>> {
-	return makeSlugBeforeInsertCore<
+export type Sluggable<TTable extends AnyMySqlTable> = ReturnType<
+	typeof createSluggableCore<
 		InferInsertModel<TTable>,
-		InferSelectModel<TTable>
-	>(params);
-}
+		InferSelectModel<TTable>,
+		TTable
+	>
+>;
 
-export async function makeSlugBeforeUpdate<
-	TTable extends AnyMySqlTable,
->(params: {
-	db: DBLike;
-	table: TTable;
-	existing: InferSelectModel<TTable>;
-	patch: Partial<InferInsertModel<TTable>>;
-	options: MySqlSluggableOptions<TTable>;
-}): Promise<Partial<InferInsertModel<TTable>>> {
-	return makeSlugBeforeUpdateCore<
+export function createSluggable<TTable extends AnyMySqlTable>(
+	table: TTable,
+	config?: SluggableConfig<TTable>,
+): Sluggable<TTable> {
+	return createSluggableCore<
 		InferInsertModel<TTable>,
-		InferSelectModel<TTable>
-	>(params);
+		InferSelectModel<TTable>,
+		TTable
+	>(table, config);
 }

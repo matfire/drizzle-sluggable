@@ -49,10 +49,6 @@
 		"./sqlite": {
 			"types": "./dist/sqlite/index.d.ts",
 			"import": "./dist/sqlite/index.js"
-		},
-		"./core": {
-			"types": "./dist/core/index.d.ts",
-			"import": "./dist/core/index.js"
 		}
 	},
 	"devDependencies": {
