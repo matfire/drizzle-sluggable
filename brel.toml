@@ -5,7 +5,7 @@ output_file = "CHANGELOG.md"
 
 [release_pr.tagging]
 enabled = true
-tag_template = "{version}"
+tag_template = "v{version}"
 
 [release_pr.version_updates]
 "package.json" = ["version"]
