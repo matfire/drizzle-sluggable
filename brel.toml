@@ -1,0 +1,7 @@
+[release_pr.changelog]
+enabled = true
+output_file = "CHANGELOG.md"
+
+[release_pr.tagging]
+enabled = true
+tag_template = "{version}"

@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
 
 permissions:
   contents: write
@@ -36,9 +41,99 @@ jobs:
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --unreleased --tag v${{ steps.next-version.outputs.version }} --prepend CHANGELOG.md
+          args: --unreleased --tag ${{ steps.next-version.outputs.version }} --prepend CHANGELOG.md
 
       - name: Generate release PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: brel release-pr
+
+  release-tag:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate tag push token
+        env:
+          BREL_TAG_PUSH_TOKEN: ${{ secrets.BREL_TAG_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BREL_TAG_PUSH_TOKEN}" ]; then
+            echo "Missing repository secret BREL_TAG_PUSH_TOKEN." >&2
+            echo "Use a PAT with Contents: Read and write to push release tags from this workflow." >&2
+            echo "GITHUB_TOKEN tag pushes do not trigger downstream tag-push workflows." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.BREL_TAG_PUSH_TOKEN }}
+
+      - name: Create release tag
+        run: |
+          set -euo pipefail
+
+          pr_title="$(jq -r '.pull_request.title // ""' "${GITHUB_EVENT_PATH}")"
+          pr_body="$(jq -r '.pull_request.body // ""' "${GITHUB_EVENT_PATH}")"
+          merge_commit_sha="$(jq -r '.pull_request.merge_commit_sha // ""' "${GITHUB_EVENT_PATH}")"
+
+          if ! printf '%s' "${pr_body}" | grep -Fq '<!-- managed-by: brel -->'; then
+            echo "PR is not managed by brel. Skipping tag creation."
+            exit 0
+          fi
+
+          tag="$(printf '%s' "${pr_title}" | sed -nE 's/^Release (.+)$/\1/p')"
+          if [ -z "${tag}" ]; then
+            echo "PR title does not match expected release format. Skipping tag creation."
+            exit 0
+          fi
+
+          prefix=''
+          suffix=''
+
+          if [ -n "${prefix}" ] && [[ "${tag}" != "${prefix}"* ]]; then
+            echo "PR title tag does not match configured tag template. Skipping tag creation."
+            exit 0
+          fi
+
+          candidate="${tag:${#prefix}}"
+          if [ -n "${suffix}" ]; then
+            if [[ "${candidate}" != *"${suffix}" ]]; then
+              echo "PR title tag does not match configured tag template. Skipping tag creation."
+              exit 0
+            fi
+            if [ "${#candidate}" -lt "${#suffix}" ]; then
+              echo "PR title tag does not match configured tag template. Skipping tag creation."
+              exit 0
+            fi
+            version="${candidate:0:${#candidate}-${#suffix}}"
+          else
+            version="${candidate}"
+          fi
+
+          if ! printf '%s' "${version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "PR title tag does not contain a stable semver. Skipping tag creation."
+            exit 0
+          fi
+
+          expected_tag="${prefix}${version}${suffix}"
+          if [ "${expected_tag}" != "${tag}" ]; then
+            echo "PR title tag does not match configured tag template. Skipping tag creation."
+            exit 0
+          fi
+
+          if [ -z "${merge_commit_sha}" ]; then
+            echo "Missing merge commit SHA. Skipping tag creation."
+            exit 0
+          fi
+
+          git fetch --tags origin
+          if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists. Skipping."
+            exit 0
+          fi
+
+          git tag "${tag}" "${merge_commit_sha}"
+          git push origin "refs/tags/${tag}"
+          echo "Created and pushed tag ${tag} at ${merge_commit_sha}."
