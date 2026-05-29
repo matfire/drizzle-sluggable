@@ -39,7 +39,7 @@ defineDialectSuite("mysql", async () => {
 		)
 	`);
 
-  const db = drizzleMysql(pool);
+  const db = drizzleMysql({ client: pool });
 
   return {
     db: db as unknown as DBLike,
@@ -86,6 +86,7 @@ async function connectMysqlWithRetry(container: StartedTestContainer): Promise<M
       password: "mysql",
       database: "drizzle_sluggable_test",
       connectionLimit: 4,
+      connectTimeout: 5_000,
     });
 
     try {
@@ -104,5 +105,5 @@ async function connectMysqlWithRetry(container: StartedTestContainer): Promise<M
 }
 
 async function stopContainer(container: StartedTestContainer) {
-  await container.stop({ remove: true, removeVolumes: true });
+  await container.stop({ timeout: 10, remove: true, removeVolumes: true });
 }

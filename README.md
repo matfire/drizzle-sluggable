@@ -12,6 +12,10 @@ Generate unique slugs for inserts and updates with a table-bound API, sensible d
 bun add @matfire/drizzle-sluggable
 ```
 
+## Compatibility
+
+`@matfire/drizzle-sluggable` v2 requires Drizzle ORM v1 (`1.0.0-rc.3` or newer, below v2). Use `@matfire/drizzle-sluggable` v1 for Drizzle ORM `0.44`.
+
 ## Quick start
 
 ```ts
