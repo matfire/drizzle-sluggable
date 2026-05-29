@@ -23,7 +23,7 @@ defineDialectSuite("sqlite", async () => {
 		)
 	`);
 
-  const db = drizzleLibsql(client);
+  const db = drizzleLibsql({ client });
 
   return {
     db: db as unknown as DBLike,

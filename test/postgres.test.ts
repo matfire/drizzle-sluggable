@@ -46,7 +46,7 @@ defineDialectSuite("postgres", async () => {
 		)
 	`);
 
-  const db = drizzlePg(pool);
+  const db = drizzlePg({ client: pool });
 
   return {
     db: db as unknown as DBLike,
